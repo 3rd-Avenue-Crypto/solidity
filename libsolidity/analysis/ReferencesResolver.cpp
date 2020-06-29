@@ -105,6 +105,14 @@ void ReferencesResolver::endVisit(VariableDeclarationStatement const& _varDeclSt
 			m_resolver.activateVariable(var->name());
 }
 
+bool ReferencesResolver::visit(VariableDeclaration const& _varDecl)
+{
+	if (_varDecl.documentation())
+		resolveInheritDoc(*_varDecl.documentation(), _varDecl.annotation());
+
+	return true;
+}
+
 bool ReferencesResolver::visit(Identifier const& _identifier)
 {
 	auto declarations = m_resolver.nameFromCurrentScope(_identifier.name());
@@ -131,6 +139,10 @@ bool ReferencesResolver::visit(Identifier const& _identifier)
 bool ReferencesResolver::visit(FunctionDefinition const& _functionDefinition)
 {
 	m_returnParameters.push_back(_functionDefinition.returnParameterList().get());
+
+	if (_functionDefinition.documentation())
+		resolveInheritDoc(*_functionDefinition.documentation(), _functionDefinition.annotation());
+
 	return true;
 }
 
@@ -140,9 +152,13 @@ void ReferencesResolver::endVisit(FunctionDefinition const&)
 	m_returnParameters.pop_back();
 }
 
-bool ReferencesResolver::visit(ModifierDefinition const&)
+bool ReferencesResolver::visit(ModifierDefinition const& _modifierDefinition)
 {
 	m_returnParameters.push_back(nullptr);
+
+	if (_modifierDefinition.documentation())
+		resolveInheritDoc(*_modifierDefinition.documentation(), _modifierDefinition.annotation());
+
 	return true;
 }
 
@@ -281,6 +297,63 @@ void ReferencesResolver::operator()(yul::VariableDeclaration const& _varDecl)
 
 	if (_varDecl.value)
 		visit(*_varDecl.value);
+}
+
+void ReferencesResolver::resolveInheritDoc(StructuredDocumentation const& _documentation, StructurallyDocumentedAnnotation& _annotation)
+{
+	switch (_annotation.docTags.count("inheritdoc"))
+	{
+	case 0:
+		break;
+	case 1:
+	{
+		string const& name = _annotation.docTags.find("inheritdoc")->second.content;
+		vector<Declaration const*> results = m_resolver.nameFromCurrentScope(name);
+
+		switch (results.size())
+		{
+		case 0:
+			m_errorReporter.docstringParsingError(
+				9397_error,
+				_documentation.location(),
+				"Documentation tag @inheritdoc references unexisting contract \"" +
+				name +
+				"\"."
+			);
+			break;
+		case 1:
+			_annotation.inheritdocReference = dynamic_cast<ContractDefinition const*>(results[0]);
+
+			if (!_annotation.inheritdocReference)
+				m_errorReporter.docstringParsingError(
+					1430_error,
+					_documentation.location(),
+					"Documentation tag @inheritdoc reference \"" +
+					name +
+					"\" is not a contract."
+				);
+			break;
+		default:
+			m_errorReporter.docstringParsingError(
+				4212_error,
+				_documentation.location(),
+				"Documentation tag @inheritdoc reference \"" +
+				name +
+				"\" is ambiguous."
+			);
+			break;
+		}
+		break;
+	}
+	default:
+		m_errorReporter.docstringParsingError(
+				5142_error,
+				_documentation.location(),
+				"Documentation tag @inheritdoc can only be given once."
+				);
+		break;
+
+	}
 }
 
 }
