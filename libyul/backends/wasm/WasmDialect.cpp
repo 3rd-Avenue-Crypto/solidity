@@ -70,25 +70,32 @@ WasmDialect::WasmDialect()
 	addFunction("i64.extend_i32_u", {i32}, {i64});
 
 	addFunction("i32.store", {i32, i32}, {}, false);
-	m_functions["i32.store"_yulstring].sideEffects.invalidatesStorage = false;
+	m_functions["i32.store"_yulstring].sideEffects.storage = SideEffects::None;
+	m_functions["i32.store"_yulstring].sideEffects.otherState = SideEffects::None;
 	addFunction("i64.store", {i32, i64}, {}, false);
-	m_functions["i64.store"_yulstring].sideEffects.invalidatesStorage = false;
+	m_functions["i64.store"_yulstring].sideEffects.storage = SideEffects::None;
+	m_functions["i64.store"_yulstring].sideEffects.otherState = SideEffects::None;
 
 	addFunction("i32.store8", {i32, i32}, {}, false);
-	m_functions["i32.store8"_yulstring].sideEffects.invalidatesStorage = false;
+	m_functions["i32.store8"_yulstring].sideEffects.storage = SideEffects::None;
+	m_functions["i32.store8"_yulstring].sideEffects.otherState = SideEffects::None;
+
 	addFunction("i64.store8", {i32, i64}, {}, false);
-	m_functions["i64.store8"_yulstring].sideEffects.invalidatesStorage = false;
+	m_functions["i64.store8"_yulstring].sideEffects.storage = SideEffects::None;
+	m_functions["i64.store8"_yulstring].sideEffects.otherState = SideEffects::None;
 
 	addFunction("i32.load", {i32}, {i32}, false);
-	m_functions["i32.load"_yulstring].sideEffects.invalidatesStorage = false;
-	m_functions["i32.load"_yulstring].sideEffects.invalidatesMemory = false;
-	m_functions["i32.load"_yulstring].sideEffects.sideEffectFree = true;
-	m_functions["i32.load"_yulstring].sideEffects.sideEffectFreeIfNoMSize = true;
+	m_functions["i32.load"_yulstring].sideEffects.canBeRemoved = true;
+	m_functions["i32.load"_yulstring].sideEffects.canBeRemovedIfNoMSize = true;
+	m_functions["i32.load"_yulstring].sideEffects.storage = SideEffects::None;
+	m_functions["i32.load"_yulstring].sideEffects.memory = SideEffects::Read;
+	m_functions["i32.load"_yulstring].sideEffects.otherState = SideEffects::None;
 	addFunction("i64.load", {i32}, {i64}, false);
-	m_functions["i64.load"_yulstring].sideEffects.invalidatesStorage = false;
-	m_functions["i64.load"_yulstring].sideEffects.invalidatesMemory = false;
-	m_functions["i64.load"_yulstring].sideEffects.sideEffectFree = true;
-	m_functions["i64.load"_yulstring].sideEffects.sideEffectFreeIfNoMSize = true;
+	m_functions["i64.load"_yulstring].sideEffects.canBeRemoved = true;
+	m_functions["i64.load"_yulstring].sideEffects.canBeRemovedIfNoMSize = true;
+	m_functions["i64.load"_yulstring].sideEffects.storage = SideEffects::None;
+	m_functions["i64.load"_yulstring].sideEffects.memory = SideEffects::Read;
+	m_functions["i64.load"_yulstring].sideEffects.otherState = SideEffects::None;
 
 	// Drop is actually overloaded for all types, but Yul does not support that.
 	// Because of that, we introduce "i32.drop" and "i64.drop".
@@ -97,8 +104,9 @@ WasmDialect::WasmDialect()
 
 	addFunction("nop", {}, {});
 	addFunction("unreachable", {}, {}, false);
-	m_functions["unreachable"_yulstring].sideEffects.invalidatesStorage = false;
-	m_functions["unreachable"_yulstring].sideEffects.invalidatesMemory = false;
+	m_functions["unreachable"_yulstring].sideEffects.storage = SideEffects::None;
+	m_functions["unreachable"_yulstring].sideEffects.memory = SideEffects::None;
+	m_functions["unreachable"_yulstring].sideEffects.otherState = SideEffects::None;
 	m_functions["unreachable"_yulstring].controlFlowSideEffects.terminates = true;
 	m_functions["unreachable"_yulstring].controlFlowSideEffects.reverts = true;
 
@@ -201,9 +209,14 @@ void WasmDialect::addEthereumExternals()
 			f.returns.emplace_back(YulString(p));
 		// TODO some of them are side effect free.
 		f.sideEffects = SideEffects::worst();
+		f.sideEffects.cannotLoop = true;
+		f.sideEffects.movableApartFromEffects = true;
 		f.controlFlowSideEffects = ext.controlFlowSideEffects;
 		f.isMSize = false;
-		f.sideEffects.invalidatesStorage = (ext.name == "storageStore");
+		if (ext.name == "storageLoad")
+			f.sideEffects.storage = SideEffects::Read;
+		else if (ext.name != "storageStore")
+			f.sideEffects.storage = SideEffects::None;
 		f.literalArguments.reset();
 	}
 }
@@ -223,6 +236,8 @@ void WasmDialect::addFunction(
 	yulAssert(_returns.size() <= 1, "The Wasm 1.0 specification only allows up to 1 return value.");
 	f.returns = std::move(_returns);
 	f.sideEffects = _movable ? SideEffects{} : SideEffects::worst();
+	f.sideEffects.cannotLoop = true;
+	f.sideEffects.movableApartFromEffects = true;
 	f.isMSize = false;
 	if (!_literalArguments.empty())
 		f.literalArguments = std::move(_literalArguments);
