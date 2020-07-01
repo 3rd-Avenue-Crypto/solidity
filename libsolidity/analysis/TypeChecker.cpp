@@ -724,7 +724,7 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 				}
 				else if (requiresStorage)
 				{
-					m_errorReporter.typeError(6617_error, _identifier.location, "The suffixes _offset and _slot can only be used on non-constant storage variables.");
+					m_errorReporter.typeError(6617_error, _identifier.location, "The suffixes .offset and .slot can only be used on non-constant storage variables.");
 					return false;
 				}
 				else if (var && var->value() && !var->value()->annotation().type && !dynamic_cast<Literal const*>(var->value().get()))
@@ -752,7 +752,7 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 			{
 				if (!var->isStateVariable() && !var->type()->dataStoredIn(DataLocation::Storage))
 				{
-					m_errorReporter.typeError(3622_error, _identifier.location, "The suffixes _offset and _slot can only be used on storage variables.");
+					m_errorReporter.typeError(3622_error, _identifier.location, "The suffixes .offset and .slot can only be used on storage variables.");
 					return false;
 				}
 				else if (_context == yul::IdentifierContext::LValue)
@@ -764,7 +764,7 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 					}
 					else if (identifierInfo.isOffset)
 					{
-						m_errorReporter.typeError(9739_error, _identifier.location, "Only _slot can be assigned to.");
+						m_errorReporter.typeError(9739_error, _identifier.location, "Only .slot can be assigned to.");
 						return false;
 					}
 					else
@@ -773,12 +773,12 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 			}
 			else if (!var->isConstant() && var->isStateVariable())
 			{
-				m_errorReporter.typeError(1408_error, _identifier.location, "Only local variables are supported. To access storage variables, use the _slot and _offset suffixes.");
+				m_errorReporter.typeError(1408_error, _identifier.location, "Only local variables are supported. To access storage variables, use the .slot and .offset suffixes.");
 				return false;
 			}
 			else if (var->type()->dataStoredIn(DataLocation::Storage))
 			{
-				m_errorReporter.typeError(9068_error, _identifier.location, "You have to use the _slot or _offset suffix to access storage reference variables.");
+				m_errorReporter.typeError(9068_error, _identifier.location, "You have to use the .slot or .offset suffix to access storage reference variables.");
 				return false;
 			}
 			else if (var->type()->sizeOnStack() != 1)
@@ -792,7 +792,7 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 		}
 		else if (requiresStorage)
 		{
-			m_errorReporter.typeError(7944_error, _identifier.location, "The suffixes _offset and _slot can only be used on storage variables.");
+			m_errorReporter.typeError(7944_error, _identifier.location, "The suffixes .offset and .slot can only be used on storage variables.");
 			return false;
 		}
 		else if (_context == yul::IdentifierContext::LValue)
