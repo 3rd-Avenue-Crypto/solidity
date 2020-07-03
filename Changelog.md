@@ -1,5 +1,7 @@
 ### 0.6.12 (unreleased)
 
+Compiler Features:
+ * Yul Optimizer: LoopInvariantCodeMotion can move reading operations outside for-loops as long as the affected area is not modified inside the loop.
 
 
 
