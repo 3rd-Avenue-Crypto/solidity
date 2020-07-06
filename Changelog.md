@@ -1,7 +1,12 @@
 ### 0.6.12 (unreleased)
 
+Language Features:
+ * Inheritance: Allow overrides to be more strict than their base, excluding ``payable``.
+
+
 Compiler Features:
  * Code Generator: Evaluate ``keccak256`` of string literals at compile-time.
+
 
 Bugfixes:
  * Type Checker: Fix overload resolution in combination with ``{value: ...}``.
