@@ -12,6 +12,7 @@ Breaking changes:
  * Type Checker: Disallow structs and arrays in memory or calldata if they contain nested mappings.
  * Type Checker: Disallow assignments to state variables that contain nested mappings.
  * Inline Assembly: Disallow `.` in user-defined function and variable names.
+ * Remove the finney and szabo denominations.
 
 Language Features:
  * Yul: Disallow EVM instruction `pc()`.
