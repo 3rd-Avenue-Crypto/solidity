@@ -2,6 +2,7 @@
 
 Compiler Features:
  * Code Generator: Evaluate ``keccak256`` of string literals at compile-time.
+ * SMTChecker: Generate multi-transaction couterexamples for violated assertions and empty pops.
 
 Bugfixes:
  * Type Checker: Fix overload resolution in combination with ``{value: ...}``.
