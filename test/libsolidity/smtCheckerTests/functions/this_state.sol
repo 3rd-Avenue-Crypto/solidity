@@ -13,3 +13,5 @@ contract C
         x = 2;
     }
 }
+// ----
+// Warning 4661: (151-165): Assertion violation happens here

@@ -13,3 +13,5 @@ contract C
 		assert(z < 1000);
 	}
 }
+// ----
+// Warning 4661: (197-213): Assertion violation happens here
