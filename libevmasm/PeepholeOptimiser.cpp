@@ -205,6 +205,31 @@ struct SwapComparison: SimplePeepholeOptimizerMethod<SwapComparison, 2>
 	}
 };
 
+/// Remove swapN after dupN
+struct DupSwap: SimplePeepholeOptimizerMethod<DupSwap, 2>
+{
+	static size_t applySimple(
+		AssemblyItem const& _dupN,
+		AssemblyItem const& _swapN,
+		std::back_insert_iterator<AssemblyItems> _out
+	)
+	{
+		if (
+			SemanticInformation::isDupInstruction(_dupN) &&
+			SemanticInformation::isSwapInstruction(_swapN) &&
+				uint8_t(_dupN.instruction()) - uint8_t(Instruction::DUP1) ==
+				uint8_t(_swapN.instruction()) - uint8_t(Instruction::SWAP1)
+		)
+		{
+			*_out = _dupN;
+			return true;
+		}
+		else
+			return false;
+	}
+};
+
+
 struct IsZeroIsZeroJumpI: SimplePeepholeOptimizerMethod<IsZeroIsZeroJumpI, 4>
 {
 	static size_t applySimple(
@@ -357,7 +382,7 @@ bool PeepholeOptimiser::optimise()
 		applyMethods(
 			state,
 			PushPop(), OpPop(), DoublePush(), DoubleSwap(), CommutativeSwap(), SwapComparison(),
-			IsZeroIsZeroJumpI(), JumpToNext(), UnreachableCode(),
+			DupSwap(), IsZeroIsZeroJumpI(), JumpToNext(), UnreachableCode(),
 			TagConjunctions(), TruthyAnd(), Identity()
 		);
 	if (m_optimisedItems.size() < m_items.size() || (
